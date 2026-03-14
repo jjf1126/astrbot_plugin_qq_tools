@@ -1649,40 +1649,32 @@ class QQToolsPlugin(Star):
                 # 格式：[REPLY:message_id]内容
                 # 同一消息内换行使用 \n（字面量）
                 if enable_reply_adapter and has_reply_markers(current_text):
-                    # 按行处理，每行可能是一个 [REPLY:...] 标签
-                    lines = current_text.split('\n')
-                    for line in lines:
-                        line = line.strip()
-                        if not line:
-                            continue
+                    # 直接在整段文本中搜索第一个引用标签
+                    match = re.search(r'\[REPLY:([^\]]+)\]', current_text)
+                    if match:
+                        msg_id = normalize_message_id(match.group(1).strip())
                         
-                        # 匹配 [REPLY:message_id]内容 格式
-                        reply_match = re.search(r'\[REPLY:([^\]]+)\](.*)', line)
-                        if reply_match:
-                            msg_id = reply_match.group(1).strip()
-                            content = reply_match.group(2)
-                            
-                            # 规范化 message_id
-                            msg_id = normalize_message_id(msg_id)
-                            
-                            # 将 \n（字面量两个字符）转换为真实换行
-                            content = content.replace('\\n', '\n')
-                            
-                            # 添加 Reply 组件
-                            new_chain.append(Comp.Reply(id=msg_id))
-                            
-                            # 添加内容（支持 At 转换）
-                            if content.strip():
-                                if enable_at_conversion:
-                                    new_chain.extend(parse_at_content(content))
-                                else:
-                                    new_chain.append(Comp.Plain(content))
-                        else:
-                            # 普通行（不带引用标签）
+                        # 【核心修复】：强制将 Reply 组件插到消息链的最顶端 (index = 0)
+                        # 这样无论前面有 <logicpass> 还是 ¤，引用组件永远排第一
+                        new_chain.insert(0, Comp.Reply(id=msg_id))
+                        
+                        # 把 [REPLY:xxx] 标签从文本中彻底抹除，保留所有剩下的原文和换行
+                        clean_text = re.sub(r'\[REPLY:[^\]]+\]', '', current_text)
+                        
+                        # 将 \n（字面量）转换为真实换行
+                        clean_text = clean_text.replace('\\n', '\n')
+                        
+                        # 将剩下的文本加入消息链
+                        if clean_text:
                             if enable_at_conversion:
-                                new_chain.extend(parse_at_content(line))
+                                new_chain.extend(parse_at_content(clean_text))
                             else:
-                                new_chain.append(Comp.Plain(line))
+                                new_chain.append(Comp.Plain(clean_text))
+                    else:
+                        if enable_at_conversion:
+                            new_chain.extend(parse_at_content(current_text))
+                        else:
+                            new_chain.append(Comp.Plain(current_text))
                 else:
                     # 2. 尝试解析泄露的工具调用
                     is_leaked_tool = False
