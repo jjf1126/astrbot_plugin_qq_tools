@@ -1592,7 +1592,7 @@ class QQToolsPlugin(Star):
         
         return f"[BILI_CARD {' '.join(parts)}]"
 
-    @filter.on_decorating_result(priority=-999999999999999999)
+    @filter.on_decorating_result()
     async def on_decorating_result(self, event: AstrMessageEvent):
         """
         在消息发送前进行处理：
@@ -1657,7 +1657,7 @@ class QQToolsPlugin(Star):
                             continue
                         
                         # 匹配 [REPLY:message_id]内容 格式
-                        reply_match = re.match(r'\[REPLY:([^\]]+)\](.*)', line)
+                        reply_match = re.search(r'\[REPLY:([^\]]+)\](.*)', line)
                         if reply_match:
                             msg_id = reply_match.group(1).strip()
                             content = reply_match.group(2)
