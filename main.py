@@ -1592,7 +1592,7 @@ class QQToolsPlugin(Star):
         
         return f"[BILI_CARD {' '.join(parts)}]"
 
-    @filter.on_decorating_result()
+    @filter.on_decorating_result(priority=-999999999999999999)
     async def on_decorating_result(self, event: AstrMessageEvent):
         """
         在消息发送前进行处理：
