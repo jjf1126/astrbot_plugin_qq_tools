@@ -525,8 +525,15 @@ class QQToolsPlugin(Star):
             abm.type = msg_type
             abm.group_id = group_id
             abm.session_id = session_id
-            abm.message_str = wake_message
-            abm.message = [Comp.Plain(wake_message)]
+
+            # 核心修复：针对群聊，强制在消息开头添加 @机器人 的组件，以绕过框架防打扰
+            if msg_type == MsgType.GROUP_MESSAGE:
+                abm.message_str = f"@{bot_self_id} {wake_message}"
+                abm.message = [Comp.At(qq=bot_self_id), Comp.Plain(f" {wake_message}")]
+            else:
+                abm.message_str = wake_message
+                abm.message = [Comp.Plain(wake_message)]
+
             abm.timestamp = int(time.time())
             abm.message_id = str(uuid.uuid4())
             abm.raw_message = None
@@ -559,6 +566,7 @@ class QQToolsPlugin(Star):
             # 设置唤醒标志
             event.is_wake = True
             event.is_at_or_wake_command = True
+            event.is_at = True  # 显式欺骗框架：这是一条 At 了机器人的消息
             
             # 提交事件到队列
             platform.commit_event(event)
