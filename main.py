@@ -506,10 +506,14 @@ class QQToolsPlugin(Star):
                 else:
                     # 普通模式: session_id 就是 group_id
                     group_id = session_id
-                    user_id = bot_self_id  # 使用 bot ID 作为发送者
+                    #user_id = bot_self_id  # 使用 bot ID 作为发送者
+                    user_id = "10000"  # 【修复】使用系统虚拟ID，绝不能用 bot_self_id
+                
+                # 【修复】发送者不能是机器人自己，否则会被框架底层的防自环机制直接过滤
+                sender_id = user_id
                 
                 # 群消息的 sender 可以是 bot 自己
-                sender_id = bot_self_id
+                #sender_id = bot_self_id
             else:
                 msg_type = MsgType.FRIEND_MESSAGE
                 group_id = ""
